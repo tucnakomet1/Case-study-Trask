@@ -66,6 +66,46 @@ public class CandidatesController {
         }
     }
 
+    // operace pro získani vsech technologii, ktere nema zadny kandidat
+    @GetMapping("/candidates/technologies/none")
+    public ResponseEntity<ArrayList<String>> getAllTechnologiesThatNoOneHas() {
+        try {
+            List<Candidates> candid_data = new ArrayList<>(candidatesRepository.findAll());
+            ArrayList<String> allTech = new ArrayList<>(), noneTech = new ArrayList<>();
+            
+            for (Candidates candidate : candid_data) {
+                String cand = candidate.getCandidate(), tech = candidate.getTechnologies();
+                String[] split_tech = tech.split(", ");
+
+                for (String one_tech : split_tech) {
+                    // zadny kandidat --> null
+                    if (cand == null || cand.equals("")) {
+                        if (!noneTech.contains(one_tech) && !allTech.contains(one_tech)) {
+                            noneTech.add(one_tech);
+                        }
+                    } else {
+                        if (!allTech.contains(one_tech)) {
+                            allTech.add(one_tech);
+
+                            // jednodussi nez prunik dvou ArrayListu
+                            if (noneTech.contains(one_tech)) {
+                                noneTech.remove(one_tech);
+                            }
+                        }
+                    }
+                }
+            }
+
+            logger.log(Level.WARNING, "Technologie navic:   " + noneTech);
+            logger.log(Level.WARNING, "Technologie pouzite: " + allTech);
+
+            return new ResponseEntity<>(noneTech, HttpStatus.OK);
+        } catch (Exception ex){
+            ex.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
     // prida kandidata do databaze - potreba vsechny hodnoty
     @PostMapping("/candidates")
     public ResponseEntity<Candidates> addCandidate(@RequestBody Candidates candidates) {
